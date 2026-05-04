@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgentOS — Intelligent Task Automation</title>
+  <link rel="stylesheet" href="src/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- BACKGROUND EFFECTS -->
+  <div class="bg-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <polygon points="10,1 19,6 19,14 10,19 1,14 1,6" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            <circle cx="10" cy="10" r="3" fill="currentColor"/>
+          </svg>
+        </div>
+        <span class="logo-text">AgentOS</span>
+        <span class="logo-version">v2.0</span>
+      </div>
+      <div class="header-center">
+        <div class="pipeline-indicator" id="pipelineIndicator">
+          <span class="pi-dot"></span>
+          <span class="pi-text">System Ready</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="stat-pill"><span class="stat-n" id="hdrTasks">0</span><span class="stat-l">tasks</span></div>
+        <div class="stat-pill"><span class="stat-n" id="hdrTokens">0</span><span class="stat-l">tokens</span></div>
+        <button class="settings-btn" onclick="toggleSettings()" title="Settings">⚙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SETTINGS MODAL -->
+  <div class="modal-overlay" id="settingsModal" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Configuration</h3>
+        <button onclick="toggleSettings()" class="close-btn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-group">
+          <label>Anthropic API Key</label>
+          <input type="password" id="apiKeyInput" placeholder="sk-ant-..." class="field-input" />
+          <p class="field-hint">Your key is stored in memory only and never sent anywhere except Anthropic's API.</p>
+        </div>
+        <div class="field-group">
+          <label>Model</label>
+          <select id="modelSelect" class="field-input">
+            <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (Recommended)</option>
+            <option value="claude-opus-4-20250514">Claude Opus 4 (Most Capable)</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Max Agents Per Task</label>
+          <input type="number" id="maxAgents" value="4" min="1" max="6" class="field-input" style="width:80px"/>
+        </div>
+        <button class="save-btn" onclick="saveSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        Agentic AI · Intelligent Task Automation
+      </div>
+      <h1 class="hero-title">What do you want<br/><em>automated today?</em></h1>
+      <p class="hero-sub">Describe any task. A team of specialized AI agents will plan, execute, and deliver results autonomously.</p>
+    </section>
+
+    <!-- TASK INPUT -->
+    <section class="input-section">
+      <div class="input-card" id="inputCard">
+        <div class="input-top">
+          <div class="input-prefix">
+            <span class="prefix-arrow">→</span>
+            <span class="prefix-label">Task</span>
+          </div>
+          <div class="mode-pills" id="modePills">
+            <button class="mode-pill active" data-mode="research" onclick="selectMode(this)">Research</button>
+            <button class="mode-pill" data-mode="code" onclick="selectMode(this)">Code</button>
+            <button class="mode-pill" data-mode="analyze" onclick="selectMode(this)">Analyze</button>
+            <button class="mode-pill" data-mode="write" onclick="selectMode(this)">Write</button>
+            <button class="mode-pill" data-mode="automate" onclick="selectMode(this)">Automate</button>
+          </div>
+        </div>
+        <textarea
+          id="taskInput"
+          class="task-textarea"
+          placeholder="e.g. Research the top 5 AI coding assistants, compare their features, pricing and user reviews, then write a structured comparison report..."
+          rows="4"
+        ></textarea>
+        <div class="input-bottom">
+          <div class="example-prompts">
+            <span class="examples-label">Try:</span>
+            <button class="example-btn" onclick="fillExample(0)">Competitor analysis</button>
+            <button class="example-btn" onclick="fillExample(1)">Python data pipeline</button>
+            <button class="example-btn" onclick="fillExample(2)">Market research report</button>
+          </div>
+          <button class="run-btn" id="runBtn" onclick="runTask()">
+            <span class="run-icon">▶</span>
+            <span class="run-text">Run Agents</span>
+            <kbd class="run-kbd">⌘↵</kbd>
+          </button>
+        </div>
+      </div>
+      <div class="api-warning" id="apiWarning" style="display:none">
+        ⚠ No API key configured. <button onclick="toggleSettings()">Add key →</button>
+      </div>
+    </section>
+
+    <!-- WORKSPACE -->
+    <section class="workspace" id="workspace" style="display:none">
+      <div class="workspace-grid">
+
+        <!-- LEFT: AGENT PANEL -->
+        <aside class="agents-panel">
+          <div class="panel-hdr">
+            <span class="panel-hdr-title">Agent Pool</span>
+            <span class="pool-badge" id="poolBadge">6 Agents</span>
+          </div>
+          <div class="agents-list" id="agentsList"></div>
+
+          <!-- TASK SUMMARY -->
+          <div class="task-summary" id="taskSummary" style="display:none">
+            <div class="summary-label">Active Task</div>
+            <div class="summary-text" id="summaryText"></div>
+            <div class="summary-stats">
+              <div class="ss-item"><span id="ssTime">0s</span><span>elapsed</span></div>
+              <div class="ss-item"><span id="ssTokens">0</span><span>tokens</span></div>
+              <div class="ss-item"><span id="ssSteps">0</span><span>steps</span></div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT: OUTPUT -->
+        <div class="output-area">
+          <div class="output-tabs">
+            <button class="otab active" data-tab="stream" onclick="switchTab(this)">Live Stream</button>
+            <button class="otab" data-tab="result" onclick="switchTab(this)">Final Result</button>
+            <button class="otab" data-tab="logs" onclick="switchTab(this)">Logs</button>
+            <button class="otab" data-tab="metrics" onclick="switchTab(this)">Metrics</button>
+          </div>
+          <div class="output-body" id="outputBody"></div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script src="src/agents.js"></script>
+  <script src="src/api.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
